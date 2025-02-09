@@ -1,0 +1,32 @@
+name: Build Scanner App
+on: [push]
+
+jobs:
+  build:
+    runs-on: \${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller --onefile --windowed --add-data \"sounds/*;sounds/\" --add-data \"config.json;.\" --hidden-import=pyttsx3.drivers --hidden-import=pyttsx3.drivers.sapi5 main.py
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: scanner-\${{ matrix.os }}
+        path: dist/*" > .github/workflows/build.yml
