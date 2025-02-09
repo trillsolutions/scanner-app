@@ -1,0 +1,1 @@
+{"server_url": "http://sampaomeasschool.local:8888", "station_code": "SCAN_6757bd5a181a9", "soketi": {"host": "localhost", "port": "6001", "key": "7fcaab00c7486555099f28ecbc6b105f", "secret": "dcac7162bf7513bbdd946db1e3c40c4a", "app_id": "3"}, "camera": {"camera": "Camera 0", "brightness": 49, "contrast": 48}, "timeout": 5}
