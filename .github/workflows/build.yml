@@ -1,4 +1,4 @@
-name: Build Scanner App
+name: Build Scanner App for TrillED
 on: [push]
 
 jobs:
