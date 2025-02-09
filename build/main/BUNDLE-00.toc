@@ -1,3 +1,0 @@
-([('main',
-   '/Users/trillsolution/development/projects/trilledscan/dist/main',
-   'EXECUTABLE')],)
