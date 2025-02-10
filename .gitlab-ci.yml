@@ -1,6 +1,8 @@
 build-windows:
   image: cdrx/pyinstaller-windows:python3
   script:
+    - unset GIT_AUTHOR_EMAIL
+    - unset GIT_COMMITTER_EMAIL
     - pip install --upgrade pip
     - pip install -r requirements.txt --no-deps
     - pip install pyinstaller
