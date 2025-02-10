@@ -1,0 +1,10 @@
+opencv-python==4.11.0.86
+numpy==2.2.2
+pygame==2.6.1
+pillow==11.1.0
+PyQt5==5.15.11
+pyttsx3==2.98
+pyzbar==0.1.9
+requests==2.32.3
+websockets==14.2
+pyinstaller==6.12.0
