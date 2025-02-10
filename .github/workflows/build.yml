@@ -1,5 +1,5 @@
 # .github/workflows/build.yml
-name: Build Windows App for TrillED Scanner
+name: Build Windows TrillED Scanner App
 
 on: [push]
 
@@ -8,10 +8,8 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.11'
     
@@ -26,7 +24,7 @@ jobs:
         pyinstaller --onefile --windowed --add-data "sounds/*;sounds/" --add-data "config.json;." main.py
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: windows-build
         path: dist/*.exe
