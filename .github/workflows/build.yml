@@ -27,7 +27,7 @@ jobs:
     
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onefile --windowed --add-data "sounds/*;sounds/" --add-data "config.json;." --collect-all zbar main.py
+        pyinstaller --onefile --windowed --add-data "sounds/*;sounds/" --add-data "config.json;." --hidden-import=pyzbar.pyzbar --collect-all pyzbar --paths "C:\Program Files (x86)\ZBar\bin" main.py
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
