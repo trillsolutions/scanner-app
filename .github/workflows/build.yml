@@ -17,11 +17,16 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-win.txt
+
+    - name: Install zbar
+      run: |
+       choco install zbar
+       refreshenv
         
     
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onefile --windowed --add-data "sounds/*;sounds/" --add-data "config.json;." main.py
+        pyinstaller --onefile --windowed --add-binary "C:\Program Files\ZBar\bin\libzbar-64.dll;." --add-data "sounds/*;sounds/" --add-data "config.json;." main.py
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
