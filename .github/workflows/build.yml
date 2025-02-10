@@ -1,15 +1,15 @@
-name: Build Scanner App for TrillED
+# .github/workflows/build.yml
+name: Build Windows App for TrillED Scanner
+
 on: [push]
 
 jobs:
   build:
-    runs-on: \${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest]
+    runs-on: windows-latest
     
     steps:
     - uses: actions/checkout@v2
+    
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -23,10 +23,10 @@ jobs:
     
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onefile --windowed --add-data \"sounds/*;sounds/\" --add-data \"config.json;.\" --hidden-import=pyttsx3.drivers --hidden-import=pyttsx3.drivers.sapi5 main.py
+        pyinstaller --onefile --windowed --add-data "sounds/*;sounds/" --add-data "config.json;." main.py
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: scanner-\${{ matrix.os }}
-        path: dist/*" > .github/workflows/build.yml
+        name: windows-build
+        path: dist/*.exe
