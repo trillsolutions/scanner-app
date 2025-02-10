@@ -27,15 +27,15 @@ jobs:
 
    - name: Download ZBar DLLs
      run: |
-       Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/pyzbar/raw/master/libzbar64.dll" -OutFile "libzbar64.dll"
-       Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/pyzbar/raw/master/libiconv.dll" -OutFile "libiconv.dll"
+       Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/barcode-reader-dlls/releases/download/0.1/libzbar-64.dll" -OutFile "libzbar-64.dll"
+       Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/barcode-reader-dlls/releases/download/0.1/libiconv.dll" -OutFile "libiconv.dll"
 
    - name: Build with PyInstaller
      run: |
        pyinstaller --onefile --windowed `
          --add-data "sounds/*;sounds/" `
          --add-data "config.json;." `
-         --add-data "libzbar64.dll;." `
+         --add-data "libzbar-64.dll;." `
          --add-data "libiconv.dll;." `
          --hidden-import=pyzbar.pyzbar `
          main.py
