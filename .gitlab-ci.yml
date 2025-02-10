@@ -1,22 +1,10 @@
-windows:
-  image: cdrx/pyinstaller-windows
+build-windows:
+  image: cdrx/pyinstaller-windows:python3
   script:
-    - python -m pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip uninstall -y PyObjC PyObjC-core
+    - pip install --upgrade pip
+    - pip install -r requirements.txt --no-deps
+    - pip install pyinstaller
     - pyinstaller --onefile --windowed --add-data "sounds/*;sounds/" --add-data "config.json;." main.py
   artifacts:
     paths:
       - dist/*.exe
-
-mac:
-  image: python:3.11
-  tags:
-    - macos
-  script:
-    - python -m pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pyinstaller --onefile --windowed --add-data "sounds/*:sounds/" --add-data "config.json:." main.py
-  artifacts:
-    paths:
-      - dist/*
