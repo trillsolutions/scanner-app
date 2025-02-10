@@ -4,33 +4,44 @@ name: Build Windows TrillED Scanner App
 on: [push]
 
 jobs:
-  build:
-    runs-on: windows-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-win.txt
+ build:
+   runs-on: windows-latest
+   
+   steps:
+   - uses: actions/checkout@v4
+   
+   - name: Set up Python
+     uses: actions/setup-python@v4
+     with:
+       python-version: '3.11'
+   
+   - name: Install dependencies
+     run: |
+       python -m pip install --upgrade pip
+       pip install -r requirements-win.txt
 
-    - name: Install zbar
-      run: |
-       choco install zbar --x86 --force
-       Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-       refreshenv
-        
-    
-    - name: Build with PyInstaller
-      run: |
-        pyinstaller --onefile --windowed --add-data "sounds/*;sounds/" --add-data "config.json;." --hidden-import=pyzbar.pyzbar --collect-all pyzbar --paths "C:\Program Files (x86)\ZBar\bin" main.py
-    
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: windows-build
-        path: dist/*.exe
+   - name: Install VC++ Redistributable
+     run: |
+       Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "vc_redist.x64.exe"
+       Start-Process -FilePath "vc_redist.x64.exe" -ArgumentList "/install", "/quiet", "/norestart" -Wait
+
+   - name: Download ZBar DLLs
+     run: |
+       Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/pyzbar/raw/master/libzbar64.dll" -OutFile "libzbar64.dll"
+       Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/pyzbar/raw/master/libiconv.dll" -OutFile "libiconv.dll"
+
+   - name: Build with PyInstaller
+     run: |
+       pyinstaller --onefile --windowed `
+         --add-data "sounds/*;sounds/" `
+         --add-data "config.json;." `
+         --add-data "libzbar64.dll;." `
+         --add-data "libiconv.dll;." `
+         --hidden-import=pyzbar.pyzbar `
+         main.py
+   
+   - name: Upload artifacts
+     uses: actions/upload-artifact@v4
+     with:
+       name: windows-build
+       path: dist/*.exe
