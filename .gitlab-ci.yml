@@ -1,0 +1,8 @@
+build:
+  image: python:3.11
+  script:
+    - pip install -r requirements.txt pyinstaller
+    - pyinstaller --onefile --windowed --add-data "sounds/*:sounds/" --add-data "config.json:." main.py
+  artifacts:
+    paths:
+      - dist/*
