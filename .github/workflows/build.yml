@@ -20,15 +20,14 @@ jobs:
 
     - name: Install zbar
       run: |
-       choco install zbar
+       choco install zbar --x86 --force
        Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
        refreshenv
         
     
     - name: Build with PyInstaller
       run: |
-        $env:PATH = "C:\Program Files (x86)\ZBar\bin;" + $env:PATH
-        pyinstaller --onefile --windowed --add-binary "C:\Program Files (x86)\ZBar\bin\libzbar-64.dll;." --add-data "sounds/*;sounds/" --add-data "config.json;." main.py
+        pyinstaller --onefile --windowed --add-data "sounds/*;sounds/" --add-data "config.json;." --collect-all zbar main.py
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
