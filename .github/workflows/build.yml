@@ -32,6 +32,9 @@ jobs:
        Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/barcode-reader-dlls/releases/download/0.1/libiconv.dll" -OutFile "libiconv.dll"
        Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/barcode-reader-dlls/releases/download/0.1/libiconv-2.dll" -OutFile "libiconv-2.dll"
 
+   - name: Create logs directory
+     run: mkdir logs
+   
    - name: Build with PyInstaller (64-bit)
      run: |
        pyinstaller --onefile --windowed --name "scanner_x64" `
