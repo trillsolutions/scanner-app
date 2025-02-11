@@ -66,8 +66,19 @@ jobs:
        --collect-all PyQt5 `
        main.py   
         
-   - name: Upload artifacts
+   - name: Upload exe artifacts
      uses: actions/upload-artifact@v4
      with:
        name: windows-build
        path: dist/*.exe
+
+   - name: Create Windows Installer
+     run: |
+      choco install nsis
+      makensis installer.nsi
+
+   - name: Upload installer
+     uses: actions/upload-artifact@v4
+     with:
+      name: windows-installer
+      path: Scanner_Setup.exe

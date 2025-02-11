@@ -52,7 +52,8 @@ class Scanner:
             return None, frame
 
         except Exception as e:
-            print(f"Error decoding frame: {e}")
+            # print(f"Error decoding frame: {e}")
+            logging.error(f"Scan error: {str(e)}", exc_info=True)
             return None, frame
 
     def is_valid_barcode_format(self, data):
@@ -72,15 +73,15 @@ class Scanner:
                 data={"scan_data": scan_data, "station_code": self.station_code},
             )
 
-            print(f"Response: {response.text}")  # Debug
-            print(f"Status code: {response.status_code}")  # Debug
-            print(f"Server: {self.server_url}")  # Debug
-            print(f"Station code: {self.station_code}")  # Debug
-            print(f"Scan data: {scan_data}")  # Debug
+            # print(f"Response: {response.text}")  # Debug
+            # print(f"Status code: {response.status_code}")  # Debug
+            # print(f"Server: {self.server_url}")  # Debug
+            # print(f"Station code: {self.station_code}")  # Debug
+            # print(f"Scan data: {scan_data}")  # Debug
             return response.json()
 
         except Exception as e:
-            print(f"Full error: {str(e)}")
+            # print(f"Full error: {str(e)}")
             return {"status": "error", "message": str(e)}
 
     def enhance_frame(self, frame, brightness=1.0, contrast=1.0):
