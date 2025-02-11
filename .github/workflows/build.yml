@@ -74,7 +74,7 @@ jobs:
 
    - name: Create Windows Installer
      run: |
-      choco install nsis
+      choco install nsis --force
       makensis installer.nsi
 
    - name: Upload installer
