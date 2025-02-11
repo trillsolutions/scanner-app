@@ -10,6 +10,9 @@ from PyQt5.QtGui import *
 from scanner import Scanner
 import pygame
 import pyttsx3
+import logging
+from datetime import datetime
+import os
 
 
 class SettingsDialog(QDialog):
@@ -209,6 +212,7 @@ class ScannerApp(QMainWindow):
         self.setup_audio()
         self.load_config()
         self.init_ui()
+        self.setup_logging()
 
     def init_ui(self):
         self.setWindowTitle("TrillED Attendance Scanner")
@@ -309,6 +313,48 @@ class ScannerApp(QMainWindow):
         except:
             self.use_tts = False
             print("TTS not available, falling back to audio files")
+
+    def setup_logging(self):
+        log_dir = "logs"
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        log_file = os.path.join(
+            log_dir, f"scanner_{datetime.now().strftime('%Y%m%d')}.log"
+        )
+        logging.basicConfig(
+            filename=log_file,
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+        )
+
+        # Keep only last 7 days of logs
+        self.cleanup_old_logs(log_dir, days=7)
+
+    def cleanup_old_logs(self, log_dir, days):
+        current_time = datetime.now()
+        for file in os.listdir(log_dir):
+            file_path = os.path.join(log_dir, file)
+            if (
+                current_time - datetime.fromtimestamp(os.path.getctime(file_path))
+            ).days > days:
+                os.remove(file_path)
+
+    def setup_logging(self):
+        if getattr(sys, "frozen", False):
+            # Running as compiled exe
+            log_dir = os.path.join(os.path.dirname(sys.executable), "logs")
+        else:
+            # Running as script
+            log_dir = "logs"
+
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        logging.error(
+            "Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback)
+        )
+        sys.exit(1)
+
+    sys.excepthook = handle_exception
 
     def start_scanner(self):
         camera_config = self.config.get("camera", {})

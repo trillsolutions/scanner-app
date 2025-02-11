@@ -40,7 +40,13 @@ jobs:
        --add-data "libzbar-64.dll;." `
        --add-data "libiconv.dll;." `
        --hidden-import=pyzbar.pyzbar `
+       --add-data "logs;logs" `
+       --hidden-import=PyQt5.QtCore `
+       --hidden-import=PyQt5.QtGui `
+       --hidden-import=PyQt5.QtWidgets `
+       --collect-all PyQt5 `
        main.py
+
 
    - name: Build with PyInstaller (32-bit)
      run: |
@@ -50,6 +56,11 @@ jobs:
        --add-data "libzbar-32.dll;." `
        --add-data "libiconv-2.dll;." `
        --hidden-import=pyzbar.pyzbar `
+       --add-data "logs;logs" `
+       --hidden-import=PyQt5.QtCore `
+       --hidden-import=PyQt5.QtGui `
+       --hidden-import=PyQt5.QtWidgets `
+       --collect-all PyQt5 `
        main.py   
         
    - name: Upload artifacts
