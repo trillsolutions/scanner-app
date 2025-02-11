@@ -28,18 +28,30 @@ jobs:
    - name: Download ZBar DLLs
      run: |
        Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/barcode-reader-dlls/releases/download/0.1/libzbar-64.dll" -OutFile "libzbar-64.dll"
+       Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/barcode-reader-dlls/releases/download/0.1/libzbar-32.dll" -OutFile "libzbar-32.dll"
        Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/barcode-reader-dlls/releases/download/0.1/libiconv.dll" -OutFile "libiconv.dll"
+       Invoke-WebRequest -Uri "https://github.com/NaturalHistoryMuseum/barcode-reader-dlls/releases/download/0.1/libiconv-2.dll" -OutFile "libiconv-2.dll"
 
-   - name: Build with PyInstaller
+   - name: Build with PyInstaller (64-bit)
      run: |
-       pyinstaller --onefile --windowed `
-         --add-data "sounds/*;sounds/" `
-         --add-data "config.json;." `
-         --add-data "libzbar-64.dll;." `
-         --add-data "libiconv.dll;." `
-         --hidden-import=pyzbar.pyzbar `
-         main.py
-   
+       pyinstaller --onefile --windowed --name "scanner_x64" `
+       --add-data "sounds/*;sounds/" `
+       --add-data "config.json;." `
+       --add-data "libzbar-64.dll;." `
+       --add-data "libiconv.dll;." `
+       --hidden-import=pyzbar.pyzbar `
+       main.py
+
+   - name: Build with PyInstaller (32-bit)
+     run: |
+       pyinstaller --onefile --windowed --name "scanner_x86" `
+       --add-data "sounds/*;sounds/" `
+       --add-data "config.json;." `
+       --add-data "libzbar-32.dll;." `
+       --add-data "libiconv-2.dll;." `
+       --hidden-import=pyzbar.pyzbar `
+       main.py   
+        
    - name: Upload artifacts
      uses: actions/upload-artifact@v4
      with:
