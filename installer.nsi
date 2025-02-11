@@ -30,4 +30,22 @@ Section "Install"
   
   CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\scanner.exe"
   WriteUninstaller "$INSTDIR\uninstall.exe"
+
+  # Registry
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
+              "DisplayName" "${APP_NAME}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
+              "UninstallString" "$INSTDIR\uninstall.exe"
+SectionEnd
+
+
+Section "Uninstall"
+  Delete "$INSTDIR\scanner.exe"
+  Delete "$INSTDIR\config.json"
+  Delete "$DESKTOP\${APP_NAME}.lnk"
+  Delete "$INSTDIR\uninstall.exe"
+  RMDir /r "$INSTDIR\sounds"
+  RMDir /r "$INSTDIR\logs"
+  RMDir "$INSTDIR"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
 SectionEnd
