@@ -34,10 +34,14 @@ jobs:
 
    - name: Create logs directory
      run: mkdir logs
+
+   - name: Convert app icon
+     run: |
+      python -c "from PIL import Image; img = Image.open('app_icon.png'); img.save('icon.ico')"
    
    - name: Build with PyInstaller (64-bit)
      run: |
-       pyinstaller --onefile --windowed --name "scanner_x64" `
+       pyinstaller --onefile --windowed --name "scanner_x64" --icon=icon.ico `
        --add-data "sounds/*;sounds/" `
        --add-data "config.json;." `
        --add-data "libzbar-64.dll;." `
@@ -53,7 +57,7 @@ jobs:
 
    - name: Build with PyInstaller (32-bit)
      run: |
-       pyinstaller --onefile --windowed --name "scanner_x86" `
+       pyinstaller --onefile --windowed --name "scanner_x86" --icon=icon.ico `
        --add-data "sounds/*;sounds/" `
        --add-data "config.json;." `
        --add-data "libzbar-32.dll;." `
@@ -72,9 +76,11 @@ jobs:
        name: windows-build
        path: dist/*.exe
 
+
    - name: Create Windows Installer
      run: |
       choco install nsis --force
+      copy icon.ico dist\
       makensis installer.nsi
 
    - name: Upload installer
