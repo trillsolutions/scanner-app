@@ -4,6 +4,9 @@
 !define APP_NAME "Scanner"
 OutFile "Scanner_Setup.exe"
 
+!define APP_ICON "icon.ico"
+Icon "${APP_ICON}"
+
 Function .onInit
   ${If} ${RunningX64}
     StrCpy $INSTDIR "$PROGRAMFILES64\${APP_NAME}"

@@ -197,6 +197,18 @@ class SettingsDialog(QDialog):
             QMessageBox.critical(self, "Error", f"Connection failed: {str(e)}")
 
 
+# Add preload
+import threading
+
+
+def preload():
+    import cv2
+    import PyQt5
+
+
+threading.Thread(target=preload).start()
+
+
 class ScannerApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -479,7 +491,7 @@ class ScannerApp(QMainWindow):
         }
 
         info_text = f"""
-        <div style='font-size: 14pt;'>
+        <div style='font-size: 12pt;'>
             <p><b>Name:</b> {data['student_name']}</p>
             <p><b>Class:</b> {data['class']}</p>
             <p><b>Time:</b> {data['scan_time']}</p>
@@ -506,7 +518,7 @@ class ScannerApp(QMainWindow):
                 return
 
             scaled_image = image.scaled(
-                150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                200, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
             self.student_photo.setPixmap(QPixmap.fromImage(scaled_image))
         except Exception as e:
