@@ -1,11 +1,12 @@
 !include LogicLib.nsh
 !include x64.nsh
 
-!define APP_NAME "Scanner"
+!define APP_NAME "TrillED Scanner"
+!define APP_ICON "dist\icon.ico"
+Icon "${APP_ICON}"
 OutFile "Scanner_Setup.exe"
 
-!define APP_ICON "icon.ico"
-Icon "${APP_ICON}"
+
 
 Function .onInit
   ${If} ${RunningX64}
