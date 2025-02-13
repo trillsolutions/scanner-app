@@ -349,12 +349,14 @@ class ScannerApp(QMainWindow):
         self.inactivity_timer = QTimer()
         self.inactivity_timer.timeout.connect(self.handle_inactivity)
         self.last_activity_time = QDateTime.currentDateTime()
+        self.last_scan_time = QDateTime.currentDateTime()
         # self.tts_engine = pyttsx3.init()
         pygame.mixer.init()
         self.setup_audio()
         self.load_config()
         self.init_ui()
         self.setup_logging()
+        self.set_status_message("Ready", "info")
 
     def init_ui(self):
         self.setWindowTitle("TrillED Attendance Scanner")
@@ -368,8 +370,8 @@ class ScannerApp(QMainWindow):
         preview_group = QGroupBox("Scanner Preview")
         preview_layout = QVBoxLayout()
         self.preview = QLabel()
-        self.preview.setMinimumSize(1280, 480)  # Camera feed size
-        self.preview.setMaximumSize(1280, 480)  # Lock dimensions
+        self.preview.setMinimumSize(1200, 400)  # Camera feed size
+        self.preview.setMaximumSize(1200, 400)  # Lock dimensions
         self.preview.setAlignment(Qt.AlignCenter)
         self.preview.setStyleSheet("background-color: #f0f0f0;")
         preview_layout.addWidget(self.preview, alignment=Qt.AlignCenter)
@@ -403,7 +405,38 @@ class ScannerApp(QMainWindow):
         control_group.addWidget(self.settings_button)
         layout.addLayout(control_group)
 
-        self.statusBar().showMessage("Ready")
+        # Status Bar
+        status_bar = QStatusBar()
+        status_bar.setStyleSheet(
+            """
+            QStatusBar {
+                min-height: 40px;
+                font-size: 14pt;
+                font-weight: bold;
+                padding: 5px;
+                background-color: #f8f9fa;
+                border-top: 1px solid #dee2e6;
+            }
+        """
+        )
+        self.setStatusBar(status_bar)
+        self.set_status_message("Ready", "info")
+
+    def set_status_message(self, message, status_type="info"):
+        colors = {"success": "#28a745", "error": "#dc3545", "info": "#17a2b8"}
+        style = f"""
+            QStatusBar {{
+                min-height: 40px;
+                font-size: 14pt;
+                font-weight: bold;
+                padding: 5px;
+                background-color: #f8f9fa;
+                border-top: 1px solid #dee2e6;
+                color: {colors[status_type]};
+            }}
+        """
+        self.statusBar().setStyleSheet(style)
+        self.statusBar().showMessage(message)
 
     def load_config(self):
         try:
@@ -577,7 +610,7 @@ class ScannerApp(QMainWindow):
         bytes_per_line = ch * w
         image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
         scaled_image = image.scaled(
-            1280, 480, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            1200, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
         self.preview.setPixmap(QPixmap.fromImage(scaled_image))
 
