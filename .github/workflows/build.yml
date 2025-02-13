@@ -37,7 +37,7 @@ jobs:
 
    - name: Convert app icon
      run: |
-      python -c "from PIL import Image; img = Image.open('app_icon.png'); img.save("icon.ico", sizes=[(256, 256), (48, 48), (32, 32), (16, 16)])"
+       python -c "from PIL import Image; img = Image.open('app_icon.png').convert('RGBA'); img.save('icon.ico', format='ICO', sizes=[(256, 256), (48, 48), (32, 32), (16, 16)])"
    
    - name: Build with PyInstaller (64-bit)
      run: |
