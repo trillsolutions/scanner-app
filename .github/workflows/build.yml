@@ -37,7 +37,7 @@ jobs:
 
    - name: Convert app icon
      run: |
-      python -c "from PIL import Image; img = Image.open('app_icon.png'); img.save('icon.ico')"
+      python -c "from PIL import Image; img = Image.open('app_icon.png'); img.save("icon.ico", sizes=[(256, 256), (48, 48), (32, 32), (16, 16)])"
    
    - name: Build with PyInstaller (64-bit)
      run: |
@@ -86,5 +86,5 @@ jobs:
    - name: Upload installer
      uses: actions/upload-artifact@v4
      with:
-      name: windows-installer
-      path: Scanner_Setup.exe
+      name: TrillED_Attendance_Scanner_Setup
+      path: TrillED_Attendance_Scanner_Setup.exe
