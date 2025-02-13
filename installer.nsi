@@ -1,7 +1,7 @@
 !include LogicLib.nsh
 !include x64.nsh
 
-!define APP_NAME "TrillED Scanner"
+!define APP_NAME "TrillED Attendance Scanner"
 !define APP_ICON "dist\icon.ico"
 Icon "${APP_ICON}"
 OutFile "Scanner_Setup.exe"

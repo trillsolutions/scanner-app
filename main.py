@@ -5,7 +5,7 @@ import websockets
 import json
 import requests
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
+from PyQt5.QtCore import QThread, pyqtSignal, QObject, QTimer, Qt, QDateTime
 from PyQt5.QtGui import *
 from scanner import Scanner
 import pygame
@@ -13,8 +13,13 @@ import pyttsx3
 import logging
 from datetime import datetime
 import os
+import ssl
+import hashlib
+import hmac
+import numpy as np
 
 
+# Settings section
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -43,13 +48,17 @@ class SettingsDialog(QDialog):
         self.soketi_key = QLineEdit()
         self.soketi_secret = QLineEdit()
         self.soketi_appid = QLineEdit()
+        self.ssl_enabled = QCheckBox()  # Create checkbox first
+        self.ssl_enabled.setChecked(True)
         self.test_soketi = QPushButton("Test Connection")
         self.test_soketi.clicked.connect(self.test_soketi_connection)
+
         soketi_layout.addRow("Host:", self.soketi_host)
         soketi_layout.addRow("Port:", self.soketi_port)
         soketi_layout.addRow("Key:", self.soketi_key)
         soketi_layout.addRow("Secret:", self.soketi_secret)
         soketi_layout.addRow("App ID:", self.soketi_appid)
+        soketi_layout.addRow("SSL:", self.ssl_enabled)
         soketi_layout.addRow("", self.test_soketi)
         soketi_group.setLayout(soketi_layout)
 
@@ -95,7 +104,7 @@ class SettingsDialog(QDialog):
         self.setLayout(layout)
 
     def count_cameras(self):
-        max_cameras = 5
+        max_cameras = 10
         available = 0
         for i in range(max_cameras):
             cap = cv2.VideoCapture(i)
@@ -103,6 +112,16 @@ class SettingsDialog(QDialog):
                 available += 1
                 cap.release()
         return available
+
+    def get_camera_names(self):
+        cameras = []
+        for i in range(10):
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                name = cap.getBackendName()
+                cameras.append(f"Camera {i} ({name})")
+                cap.release()
+        return cameras
 
     def load_settings(self, config):
         self.server_url.setText(config.get("server_url", ""))
@@ -114,6 +133,7 @@ class SettingsDialog(QDialog):
         self.soketi_key.setText(soketi.get("key", ""))
         self.soketi_secret.setText(soketi.get("secret", ""))
         self.soketi_appid.setText(soketi.get("app_id", ""))
+        self.ssl_enabled.setChecked(soketi.get("use_ssl", True))
 
         camera = config.get("camera", {})
         camera_config = config.get("camera", {})
@@ -134,6 +154,7 @@ class SettingsDialog(QDialog):
                 "key": self.soketi_key.text(),
                 "secret": self.soketi_secret.text(),
                 "app_id": self.soketi_appid.text(),
+                "use_ssl": self.ssl_enabled.isChecked(),
             },
             "camera": {
                 "camera": self.camera_select.currentText(),
@@ -147,54 +168,139 @@ class SettingsDialog(QDialog):
         try:
 
             async def test_connection():
-                uri = f"ws://{self.soketi_host.text()}:{self.soketi_port.text()}/app/{self.soketi_key.text()}"
+                protocol = "wss" if self.ssl_enabled.isChecked() else "ws"
+                uri = f"{protocol}://{self.soketi_host.text()}:{self.soketi_port.text()}/app/{self.soketi_key.text()}"
                 print(f"Connecting to: {uri}")
 
                 try:
-                    async with websockets.connect(uri) as ws:
-                        auth_data = {
-                            "event": "pusher:subscribe",
-                            "data": {
-                                "auth": f"{self.soketi_key.text()}:{self.soketi_secret.text()}",
-                                "channel": "attendance",
-                                "app_id": self.soketi_appid.text(),
-                            },
-                        }
-                        print(f"Sending auth: {auth_data}")
-                        await ws.send(json.dumps(auth_data))
+                    if self.ssl_enabled.isChecked():
+                        ssl_context = ssl.create_default_context()
+                        ssl_context.check_hostname = False
+                        ssl_context.verify_mode = ssl.CERT_NONE
+                        ws = await websockets.connect(uri, ssl=ssl_context)
+                    else:
+                        ws = await websockets.connect(uri)
 
-                        # Wait for auth response
-                        auth_response = await ws.recv()
-                        print(f"Auth response: {auth_response}")
+                    auth_data = {
+                        "event": "pusher:subscribe",
+                        "data": {
+                            "auth": f"{self.soketi_key.text()}:{self.soketi_secret.text()}",
+                            "channel": "attendance",
+                            "app_id": self.soketi_appid.text(),
+                        },
+                    }
+                    print(f"Sending auth: {auth_data}")
+                    await ws.send(json.dumps(auth_data))
 
-                        # Send ping
-                        ping = {"event": "pusher:ping", "data": {}}
-                        print("Sending ping")
-                        await ws.send(json.dumps(ping))
+                    auth_response = await ws.recv()
+                    print(f"Auth response: {auth_response}")
 
-                        # Wait for pong
-                        response = await ws.recv()
-                        print(f"Received: {response}")
-                        data = json.loads(response)
-                        return (
-                            data.get("event") == "pusher:pong"
-                            or data.get("event")
-                            == "pusher_internal:subscription_succeeded"
-                        )
+                    ping = {"event": "pusher:ping", "data": {}}
+                    print("Sending ping")
+                    await ws.send(json.dumps(ping))
+
+                    response = await ws.recv()
+                    print(f"Received: {response}")
+                    data = json.loads(response)
+                    return data.get("event") in [
+                        "pusher:pong",
+                        "pusher_internal:subscription_succeeded",
+                    ]
 
                 except Exception as e:
                     print(f"Connection error: {e}")
                     return False
 
             result = asyncio.run(test_connection())
-            if result:
-                QMessageBox.information(
-                    self, "Success", "Soketi connection successful!"
-                )
-            else:
-                QMessageBox.warning(self, "Error", "Soketi connection failed")
+            (
+                QMessageBox.information(self, "Success", "Connection successful!")
+                if result
+                else QMessageBox.warning(self, "Error", "Connection failed")
+            )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Connection failed: {str(e)}")
+
+
+# Websocket section
+class WebSocketClient:
+    def __init__(self, soketi_config):
+        self.soketi_config = soketi_config
+        self.ws = None
+
+    async def connect(self, is_test=False):
+        """Establishes WebSocket connection using SSL or non-SSL based on config"""
+        protocol = "wss" if self.soketi_config.get("use_ssl", True) else "ws"
+        ws_url = f"{protocol}://{self.soketi_config['host']}:{self.soketi_config['port']}/app/{self.soketi_config['key']}"
+
+        try:
+            if self.soketi_config.get("use_ssl", True):
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                self.ws = await websockets.connect(
+                    ws_url, ssl=ssl_context, close_timeout=5, ping_timeout=5
+                )
+            else:
+                self.ws = await websockets.connect(
+                    ws_url, close_timeout=5, ping_timeout=5
+                )
+
+            socket_id = await self.get_socket_id()
+            auth_signature = self.get_auth_signature(socket_id, "attendance")
+            await self.subscribe(auth_signature)
+
+            if is_test:
+                return True
+            else:
+                await self.listen_messages()
+
+        except Exception as e:
+            logging.error(f"WebSocket connection failed: {e}")
+            print(f"Connection error: {e}")
+            if is_test:
+                return False
+            await asyncio.sleep(5)
+            await self.connect()  # Retry connection
+
+    async def get_socket_id(self):
+        """Gets socket ID from connection response"""
+        message = await self.ws.recv()
+        data = json.loads(message)
+        if data.get("event") == "pusher:connection_established":
+            return json.loads(data["data"])["socket_id"]
+
+    def get_auth_signature(self, socket_id, channel):
+        """Generates auth signature for private channels"""
+        secret = self.soketi_config.get("secret", "")
+        string_to_sign = f"{socket_id}:{channel}"
+        signature = hmac.new(
+            secret.encode(), string_to_sign.encode(), hashlib.sha256
+        ).hexdigest()
+        return f"{self.soketi_config.get('key')}:{signature}"
+
+    async def subscribe(self, auth_signature):
+        subscribe_payload = {
+            "event": "pusher:subscribe",
+            "data": {
+                "channel": "attendance",
+                "auth": auth_signature,
+                "app_id": self.soketi_config.get("app_id"),
+                "app_secret": self.soketi_config.get("secret"),
+            },
+        }
+        await self.ws.send(json.dumps(subscribe_payload))
+
+    async def listen_messages(self):
+        """Listens for incoming messages"""
+        while True:
+            try:
+                message = await self.ws.recv()
+                data = json.loads(message)
+                if not data.get("event", "").startswith("client-"):
+                    logging.info(f"WebSocket message received: {message}")
+            except Exception as e:
+                logging.error(f"WebSocket error: {e}")
+                break
 
 
 # Add preload
@@ -209,6 +315,30 @@ def preload():
 threading.Thread(target=preload).start()
 
 
+class FrameProcessor(QObject):
+    frame_processed = pyqtSignal(np.ndarray, str)
+
+    def __init__(self):
+        super().__init__()
+        self.running = True
+
+    def process_frame(self, frame, scanner, config):
+        if not self.running:
+            return
+        try:
+            # Apply brightness/contrast
+            frame = cv2.convertScaleAbs(
+                frame,
+                alpha=config["camera"]["contrast"] / 50.0,
+                beta=config["camera"]["brightness"],
+            )
+            scan_data, processed_frame = scanner.decode_frame(frame)
+            self.frame_processed.emit(processed_frame, scan_data if scan_data else "")
+        except Exception as e:
+            logging.error(f"Frame processing error: {e}")
+
+
+# Scanner App Section
 class ScannerApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -238,10 +368,11 @@ class ScannerApp(QMainWindow):
         preview_group = QGroupBox("Scanner Preview")
         preview_layout = QVBoxLayout()
         self.preview = QLabel()
-        self.preview.setMinimumSize(800, 400)
+        self.preview.setMinimumSize(600, 400)  # Camera feed size
+        self.preview.setMaximumSize(600, 400)  # Lock dimensions
         self.preview.setAlignment(Qt.AlignCenter)
         self.preview.setStyleSheet("background-color: #f0f0f0;")
-        preview_layout.addWidget(self.preview)
+        preview_layout.addWidget(self.preview, alignment=Qt.AlignCenter)
         preview_group.setLayout(preview_layout)
         layout.addWidget(preview_group)
 
@@ -372,22 +503,37 @@ class ScannerApp(QMainWindow):
         camera_config = self.config.get("camera", {})
         camera_id = int(camera_config.get("camera", "Camera 0").split()[-1])
 
-        # camera_id = int(self.config["camera"]["camera"].split()[-1])
         self.camera = cv2.VideoCapture(camera_id)
-
         if not self.camera.isOpened():
             QMessageBox.critical(self, "Error", "Could not open camera")
             return
 
         self.scanner = Scanner(self.config["server_url"], self.config["station_code"])
-        self.timer.start(30)
+        self.scanner.soketi_config = self.config.get("soketi", {})
 
+        # Initialize WebSocket
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.scanner.init_websocket())
+
+        # Setup frame processing thread
+        self.process_thread = QThread()
+        self.processor = FrameProcessor()
+        self.processor.moveToThread(self.process_thread)
+        self.processor.frame_processed.connect(self.update_preview)
+        self.process_thread.start()
+
+        self.timer.start(30)
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
         self.statusBar().showMessage("Scanner running")
         self.last_activity_time = QDateTime.currentDateTime()
 
     def stop_scanner(self):
+        if hasattr(self, "processor"):
+            self.processor.running = False
+            self.process_thread.quit()
+            self.process_thread.wait()
         self.timer.stop()
         if self.camera:
             self.camera.release()
@@ -402,7 +548,7 @@ class ScannerApp(QMainWindow):
         self.set_default_photo()
 
     def clear_preview(self):
-        empty_image = QImage(800, 400, QImage.Format_RGB888)
+        empty_image = QImage(600, 400, QImage.Format_RGB888)
         empty_image.fill(QColor("#f0f0f0"))
         self.preview.setPixmap(QPixmap.fromImage(empty_image))
 
@@ -414,27 +560,21 @@ class ScannerApp(QMainWindow):
             self.statusBar().showMessage("Scanner stopped due to inactivity")
 
     def update_frame(self):
-        self.last_activity_time = QDateTime.currentDateTime()
         ret, frame = self.camera.read()
-        if not ret:
-            return
+        if ret:
+            self.processor.process_frame(frame, self.scanner, self.config)
 
-        frame = cv2.convertScaleAbs(
-            frame,
-            alpha=self.config["camera"]["contrast"] / 50.0,
-            beta=self.config["camera"]["brightness"],
-        )
-
-        if self.scanner:
-            scan_data, frame = self.scanner.decode_frame(frame)
-            if scan_data:
-                self.handle_scan(scan_data)
+    def update_preview(self, frame, scan_data):
+        if scan_data:
+            self.handle_scan(scan_data)
 
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb_frame.shape
         bytes_per_line = ch * w
         image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
-        scaled_image = image.scaled(800, 400, Qt.KeepAspectRatio)
+        scaled_image = image.scaled(
+            960, 720, Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
         self.preview.setPixmap(QPixmap.fromImage(scaled_image))
 
     def set_status_message(self, message, status_type="info"):
@@ -456,13 +596,13 @@ class ScannerApp(QMainWindow):
             self.speak_message(message)
 
     def speak_message(self, message):
-        if self.use_tts:
-            try:
-                threading.Thread(target=self._speak_async, args=(message,)).start()
-            except:
-                self.play_status_sound(message)
-        else:
+        # Prefer sound files over TTS
+        try:
             self.play_status_sound(message)
+        except Exception as e:
+            logging.error(f"Sound error: {e}")
+            if self.use_tts:
+                self._speak_async(message)
 
     def _speak_async(self, message):
         self.tts_engine.say(message)
@@ -477,11 +617,15 @@ class ScannerApp(QMainWindow):
             "No active schedule for current time": "no-active-schedule.mp3",
             "No schedule found for today": "no-schedule-found.mp3",
             "Invalid station code": "invalid-station.mp3",
-            # Add more mappings
         }
-        sound_file = sound_map.get(message, "success.mp3")
-        pygame.mixer.music.load(f"sounds/{sound_file}")
-        pygame.mixer.music.play()
+        try:
+            sound_file = sound_map.get(message, "error.mp3")
+            if not os.path.exists(f"sounds/{sound_file}"):
+                raise FileNotFoundError(f"Sound file not found: {sound_file}")
+            pygame.mixer.music.load(f"sounds/{sound_file}")
+            pygame.mixer.music.play()
+        except Exception as e:
+            raise Exception(f"Sound playback failed: {e}")
 
     def update_student_info(self, data):
         status_style = {
