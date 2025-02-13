@@ -369,7 +369,7 @@ class ScannerApp(QMainWindow):
         preview_layout = QVBoxLayout()
         self.preview = QLabel()
         self.preview.setMinimumSize(1280, 480)  # Camera feed size
-        elf.preview.setMaximumSize(1280, 480)  # Lock dimensions
+        self.preview.setMaximumSize(1280, 480)  # Lock dimensions
         self.preview.setAlignment(Qt.AlignCenter)
         self.preview.setStyleSheet("background-color: #f0f0f0;")
         preview_layout.addWidget(self.preview, alignment=Qt.AlignCenter)
