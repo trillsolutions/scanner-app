@@ -368,8 +368,8 @@ class ScannerApp(QMainWindow):
         preview_group = QGroupBox("Scanner Preview")
         preview_layout = QVBoxLayout()
         self.preview = QLabel()
-        self.preview.setMinimumSize(600, 400)  # Camera feed size
-        self.preview.setMaximumSize(600, 400)  # Lock dimensions
+        self.preview.setMinimumSize(1280, 480)  # Camera feed size
+        elf.preview.setMaximumSize(1280, 480)  # Lock dimensions
         self.preview.setAlignment(Qt.AlignCenter)
         self.preview.setStyleSheet("background-color: #f0f0f0;")
         preview_layout.addWidget(self.preview, alignment=Qt.AlignCenter)
@@ -380,7 +380,7 @@ class ScannerApp(QMainWindow):
         info_group = QGroupBox("Student Information")
         info_layout = QHBoxLayout()
         self.student_photo = QLabel()
-        self.student_photo.setFixedSize(150, 150)
+        self.student_photo.setFixedSize(200, 200)
         info_layout.addWidget(self.student_photo)
         self.student_info = QLabel("No scan yet")
         self.student_info.setTextFormat(Qt.RichText)
@@ -564,6 +564,10 @@ class ScannerApp(QMainWindow):
         if ret:
             self.processor.process_frame(frame, self.scanner, self.config)
 
+            # Clear info if no barcode detected for 5 seconds
+            if QDateTime.currentDateTime().secsTo(self.last_scan_time) > 5:
+                self.reset_display()
+
     def update_preview(self, frame, scan_data):
         if scan_data:
             self.handle_scan(scan_data)
@@ -573,7 +577,7 @@ class ScannerApp(QMainWindow):
         bytes_per_line = ch * w
         image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
         scaled_image = image.scaled(
-            960, 720, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            1280, 480, Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
         self.preview.setPixmap(QPixmap.fromImage(scaled_image))
 
@@ -584,6 +588,7 @@ class ScannerApp(QMainWindow):
         self.statusBar().showMessage(message)
 
     def handle_scan(self, scan_data):
+        self.last_scan_time = QDateTime.currentDateTime()
         result = self.scanner.process_scan(scan_data)
 
         if result["status"] == "success":
@@ -670,7 +675,7 @@ class ScannerApp(QMainWindow):
             self.set_default_photo()
 
     def set_default_photo(self):
-        default_image = QImage(150, 150, QImage.Format_RGB888)
+        default_image = QImage(200, 200, QImage.Format_RGB888)
         default_image.fill(Qt.lightGray)
         self.student_photo.setPixmap(QPixmap.fromImage(default_image))
 
