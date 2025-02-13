@@ -7,7 +7,8 @@
 !define VERSION "1.0.0"
 !define WEBSITE_URL "https://trillsolution.com"
 !define SUPPORT_EMAIL "support@trillsolution.com"
-!define MUI_FINISHPAGE_AUTOCLOSE
+!define MUI_FINISHPAGE_AUTOCLOSE True
+!define MUI_FINISHPAGE_NOAUTOCLOSE False
 
 # Icon for installer
 !define APP_ICON "icon.ico"
@@ -35,6 +36,10 @@ Function .onInit
        MessageBox MB_OK|MB_ICONEXCLAMATION "Administrator rights required to install ${APP_NAME}"
        Quit
    ${EndIf}
+FunctionEnd
+
+Function .onInstSuccess
+    SetAutoClose true
 FunctionEnd
 
 Section "Install"

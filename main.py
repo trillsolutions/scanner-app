@@ -362,6 +362,28 @@ class ScannerApp(QMainWindow):
         self.setWindowTitle("TrillED Attendance Scanner")
         self.setGeometry(100, 100, 1024, 600)
 
+        self.setStyleSheet(
+            """
+            QGroupBox {
+                font-weight: bold;
+                padding: 15px;
+                margin-top: 1ex;
+            }
+            QPushButton {
+                min-width: 120px;
+                padding: 8px;
+            }
+            QStatusBar {
+                min-height: 40px;
+                font-size: 14pt;
+                font-weight: bold;
+                padding: 5px;
+                background-color: #f8f9fa;
+                border-top: 1px solid #dee2e6;
+            }
+        """
+        )
+
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
@@ -370,10 +392,16 @@ class ScannerApp(QMainWindow):
         preview_group = QGroupBox("Scanner Preview")
         preview_layout = QVBoxLayout()
         self.preview = QLabel()
-        self.preview.setMinimumSize(1200, 400)  # Camera feed size
-        self.preview.setMaximumSize(1200, 400)  # Lock dimensions
+        self.preview.setMinimumSize(1024, 480)  # Camera feed size
+        self.preview.setMaximumSize(1024, 480)  # Lock dimensions
         self.preview.setAlignment(Qt.AlignCenter)
-        self.preview.setStyleSheet("background-color: #f0f0f0;")
+        self.preview.setStyleSheet(
+            """
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        """
+        )
         preview_layout.addWidget(self.preview, alignment=Qt.AlignCenter)
         preview_group.setLayout(preview_layout)
         layout.addWidget(preview_group)
@@ -610,7 +638,7 @@ class ScannerApp(QMainWindow):
         bytes_per_line = ch * w
         image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
         scaled_image = image.scaled(
-            1200, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            1024, 480, Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
         self.preview.setPixmap(QPixmap.fromImage(scaled_image))
 
